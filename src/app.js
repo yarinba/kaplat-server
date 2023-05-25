@@ -1,18 +1,30 @@
 import Fastify from "fastify";
 
+import { requestsLogger } from "./logger.js";
+
 import healthRoutes from "./routes/healthRoutes.js";
 import todoRoutes from "./routes/todoRoutes.js";
 
-const app = Fastify({
-  logger: {
-    transport: {
-      target: "pino-pretty",
-      options: {
-        translateTime: "HH:MM:ss Z",
-        ignore: "pid,hostname",
-      },
-    },
-  },
+export let globalRequestCounter = 1;
+
+const app = Fastify();
+
+app.addHook("onRequest", (request, reply, done) => {
+  requestsLogger.info(
+    `Incoming request | #${globalRequestCounter} | resource: ${request.raw.url} | HTTP Verb ${request.raw.method}`
+  );
+
+  done();
+});
+
+app.addHook("onResponse", (request, reply, done) => {
+  requestsLogger.debug(
+    `request #${globalRequestCounter} duration: ${reply.getResponseTime()}ms`
+  );
+
+  globalRequestCounter++;
+
+  done();
 });
 
 app.register(healthRoutes, { prefix: "/todo" });
