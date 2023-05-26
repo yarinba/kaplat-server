@@ -11,7 +11,7 @@ const logggerBaseConfig = {
   ),
 };
 
-export const requestsLogger = winston.createLogger({
+export const requestLogger = winston.createLogger({
   ...logggerBaseConfig,
   transports: [
     new winston.transports.Console(),
