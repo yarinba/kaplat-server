@@ -1,4 +1,5 @@
 import todoModel from "../models/todos";
+import { todoLogger } from "../logger";
 
 const STATUS = {
   ALL: "ALL",
@@ -36,6 +37,11 @@ export const createTodo = async (req, reply) => {
 
     const id = todoModel.getNewID();
 
+    todoLogger.info(`Creating new TODO with Title [${title}]]`);
+    todoLogger.debug(
+      `Currently there are ${todos.length} TODOs in the system. New TODO will be assigned with id ${id}`
+    );
+
     const newTodo = todoModel.create({
       id,
       title,
@@ -46,7 +52,9 @@ export const createTodo = async (req, reply) => {
 
     return reply.send({ result: newTodo.id });
   } catch (error) {
-    return reply.status(409).send({ errorMessage: `Error: ${error.message}` });
+    const errorMessage = `Error: ${error.message}`;
+    todoLogger.error(errorMessage);
+    return reply.status(409).send({ errorMessage });
   }
 };
 
@@ -66,11 +74,17 @@ export const getTodosCount = async (req, reply) => {
       ? todos.length
       : todos.filter((todo) => todo.status === status).length;
 
+  todoLogger.info(`Total TODOs count for state ${status} is ${count}`);
+
   return reply.send({ result: count });
 };
 
 export const getTodosData = async (req, reply) => {
   const { status, sortBy } = req.query;
+
+  todoLogger.info(
+    `Extracting todos content. Filter: ${status} | Sorting by: ${sortBy}`
+  );
 
   // Check if status and sortBy parameters are valid
   if ((status && !(status in STATUS)) || (sortBy && !(sortBy in SORT_BY))) {
@@ -93,11 +107,17 @@ export const getTodosData = async (req, reply) => {
           a[SORT_BY[sortBy]].localeCompare(b[SORT_BY[sortBy]])
         );
 
+  todoLogger.debug(
+    `There are a total of ${todos.length} todos in the system. The result holds ${filteredTodos.length} todos`
+  );
+
   return reply.send({ result: sortedTodos });
 };
 
 export const updateTodoStatus = async (req, reply) => {
   const { id, status } = req.query;
+
+  todoLogger.info(`Update TODO id [${id}] state to ${status}`);
 
   // Check if status is valid
   if (status === STATUS.ALL || !(status in STATUS)) {
@@ -108,9 +128,9 @@ export const updateTodoStatus = async (req, reply) => {
 
   // Check if no such TODO with that id can be found
   if (!todo) {
-    return reply
-      .code(404)
-      .send({ errorMessage: `Error: no such TODO with id ${id}` });
+    const errorMessage = `Error: no such TODO with id ${id}`;
+    todoLogger.error(errorMessage);
+    return reply.code(404).send({ errorMessage });
   }
 
   // Save the old status to return as a response
@@ -119,6 +139,8 @@ export const updateTodoStatus = async (req, reply) => {
   // Update TODO status
   todoModel.updateById(todo.id, { status });
 
+  todoLogger.debug(`Todo id [${id}] state change: ${oldStatus} --> ${status}`);
+
   return reply.send({ result: oldStatus });
 };
 
@@ -126,12 +148,17 @@ export const deleteTodo = async (req, reply) => {
   const { id } = req.query;
 
   if (!todoModel.deleteById(parseInt(id))) {
-    return reply
-      .code(404)
-      .send({ errorMessage: `Error: no such TODO with id ${id}` });
+    const errorMessage = `Error: no such TODO with id ${id}`;
+    todoLogger.error(errorMessage);
+    return reply.code(404).send({ errorMessage });
   }
 
   const result = todoModel.getAll().length;
+
+  todoLogger.info(`Removing todo id ${id}`);
+  todoLogger.debug(
+    `After removing todo id [${id}] there are ${result} TODOs in the system`
+  );
 
   return reply.send({ result });
 };
