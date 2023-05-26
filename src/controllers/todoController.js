@@ -37,7 +37,7 @@ export const createTodo = async (req, reply) => {
 
     const id = todoModel.getNewID();
 
-    todoLogger.info(`Creating new TODO with Title [${title}]]`);
+    todoLogger.info(`Creating new TODO with Title [${title}]`);
     todoLogger.debug(
       `Currently there are ${todos.length} TODOs in the system. New TODO will be assigned with id ${id}`
     );
