@@ -18,7 +18,7 @@ export const createTodo = async (req, reply) => {
   try {
     const { title, content, dueDate } = req.body;
 
-    const todos = todoModel.getAll();
+    const todos = await todoModel.getAll();
 
     // Check if a TODO with this title already exists
     const existingTodo = todos.find((todo) => todo.title === title);
@@ -42,7 +42,7 @@ export const createTodo = async (req, reply) => {
       `Currently there are ${todos.length} TODOs in the system. New TODO will be assigned with id ${id}`
     );
 
-    const newTodo = todoModel.create({
+    const newTodo = await todoModel.create({
       id,
       title,
       content,
@@ -59,14 +59,14 @@ export const createTodo = async (req, reply) => {
 };
 
 export const getTodosCount = async (req, reply) => {
-  const { status } = req.query;
+  const { status, persistenceMethod } = req.query;
 
   // Check if status parameter is valid
   if (status && !(status in STATUS)) {
     return reply.status(400).send({ errorMessage: "Bad request" });
   }
 
-  const todos = todoModel.getAll();
+  const todos = await todoModel.getAll(persistenceMethod);
 
   // Get the count of todos with the requested status
   const count =
@@ -80,7 +80,7 @@ export const getTodosCount = async (req, reply) => {
 };
 
 export const getTodosData = async (req, reply) => {
-  const { status, sortBy } = req.query;
+  const { status, sortBy, persistenceMethod } = req.query;
 
   todoLogger.info(
     `Extracting todos content. Filter: ${status} | Sorting by: ${sortBy}`
@@ -91,7 +91,7 @@ export const getTodosData = async (req, reply) => {
     return reply.status(400).send({ errorMessage: "Bad request" });
   }
 
-  const todos = todoModel.getAll();
+  const todos = await todoModel.getAll(persistenceMethod);
 
   // Filter todos by status
   const filteredTodos =
@@ -124,7 +124,7 @@ export const updateTodoStatus = async (req, reply) => {
     return reply.status(400).send({ errorMessage: "Bad request" });
   }
 
-  const todo = todoModel.getById(parseInt(id));
+  const todo = await todoModel.getById(parseInt(id));
 
   // Check if no such TODO with that id can be found
   if (!todo) {
@@ -137,7 +137,7 @@ export const updateTodoStatus = async (req, reply) => {
   const oldStatus = todo.status;
 
   // Update TODO status
-  todoModel.updateById(todo.id, { status });
+  await todoModel.updateById(todo.id, { status });
 
   todoLogger.debug(`Todo id [${id}] state change: ${oldStatus} --> ${status}`);
 
@@ -147,13 +147,13 @@ export const updateTodoStatus = async (req, reply) => {
 export const deleteTodo = async (req, reply) => {
   const { id } = req.query;
 
-  if (!todoModel.deleteById(parseInt(id))) {
+  if (!(await todoModel.deleteById(parseInt(id)))) {
     const errorMessage = `Error: no such TODO with id ${id}`;
     todoLogger.error(errorMessage);
     return reply.code(404).send({ errorMessage });
   }
 
-  const result = todoModel.getAll().length;
+  const result = (await todoModel.getAll()).length;
 
   todoLogger.info(`Removing todo id ${id}`);
   todoLogger.debug(
