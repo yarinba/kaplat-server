@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-await mongoose.connect("mongodb://localhost:27017/todos");
+await mongoose.connect("mongodb://mongo:27017/todos");
 
 const todoSchema = new mongoose.Schema({
   rawid: Number,

@@ -18,4 +18,4 @@ services:
       - "3769:9285"
     depends_on:
       - postgres
-      # - mongo
+      - mongo
