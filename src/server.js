@@ -1,6 +1,6 @@
 import app from "./app.js";
 
-const port = 3769;
+const port = 9285;
 
 // Run the server!
 app.listen({ port, host: "0.0.0.0" }, function (err, address) {
